@@ -1,25 +1,22 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from lxml import etree
+from app.mapper.order_mapper import parse_orders
 
 router = APIRouter()
 
-@router.post("/orders")
-async def create_order(request: Request):
+@router.post("/orders", summary="주문 생성 API (XML 수신)")
+async def create_order(xml_data: str = Body(..., media_type="application/xml")):
     try:
-        body = await request.body()
-        xml_root = etree.fromstring(body)
+        xml_root = etree.fromstring(xml_data.encode())
+        orders = parse_orders(xml_root)
 
-        # 예시: HEADER 태그 개수 확인
-        headers = xml_root.findall(".//HEADER")
-        items = xml_root.findall(".//ITEM")
-
-        if not headers or not items:
-            raise ValueError("HEADER 또는 ITEM 누락")
+        if not orders:
+            raise ValueError("주문 데이터 없음")
 
         return {
             "status": "SUCCESS",
-            "header_count": len(headers),
-            "item_count": len(items)
+            "order_count": len(orders),
+            "orders": orders
         }
 
     except Exception as e:
