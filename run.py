@@ -1,6 +1,9 @@
-import os
-from dotenv import load_dotenv
+import uvicorn
 
-load_dotenv()
-
-print(os.getenv('ORDER_TB_HOST'), os.getenv('ORDER_TB_PORT'), os.getenv('ORDER_TB_SID'))
+if __name__ == "__main__":
+    uvicorn.run(
+        "app.main:app",  # app 폴더의 main.py 안의 app 객체
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
