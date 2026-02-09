@@ -4,15 +4,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ORDER_TB_URL = f"mysql+pymysql://{os.getenv('ORDER_TB_USER')}:{os.getenv('ORDER_TB_PASSWORD')}@" \
-               f"{os.getenv('ORDER_TB_HOST')}:{os.getenv('ORDER_TB_PORT')}/{os.getenv('ORDER_TB_TABLENAME')}?charset=utf8mb4"
+DB_USER = os.getenv("ORDER_TB_USER")
+DB_PASS = os.getenv("ORDER_TB_PASSWORD")
+DB_HOST = os.getenv("ORDER_TB_HOST")
+DB_PORT = os.getenv("ORDER_TB_PORT")
+DB_SERVICE = os.getenv("ORDER_TB_SID")
 
-print(ORDER_TB_URL)
+dsn = f"{DB_HOST}:{DB_PORT}/?service_name={DB_SERVICE}"
 
 engine = create_engine(
-    ORDER_TB_URL,
-    pool_pre_ping=True,  # 죽은 커넥션 자동 체크
-    connect_args={
-        "ssl": {}
-    }
+    f"oracle+oracledb://{DB_USER}:{DB_PASS}@{dsn}",
+    pool_pre_ping=True
 )
