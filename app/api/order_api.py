@@ -7,6 +7,7 @@ from lxml import etree
 from app.db.database import engine
 from app.mapper.order_mapper import parse_orders
 from app.utils.file_writer import save_orders_to_file
+from app.utils.decoder import decode_base64_euckr
 
 load_dotenv()
 
@@ -16,12 +17,13 @@ APPLICANT_KEY=os.getenv("APPLICANT_KEY")
 router = APIRouter()
 SessionLocal = sessionmaker(bind=engine)
 
-@router.post("/orders", summary="주문 생성 API (XML 수신)")
-async def create_order(xml_data: str = Body(..., media_type="application/xml")):
+@router.post("/orders", summary="주문 수신 API")
+async def create_order(data: str = Body(..., media_type="text/plain")):
     session = SessionLocal()
     
     try:
-        wrapped_xml = f"<ROOT>{xml_data}</ROOT>" # XML에 ROOT 태그 추가하여 오류 방지
+        xml_string = decode_base64_euckr(data)
+        wrapped_xml = f"<ROOT>{xml_string}</ROOT>" # XML에 ROOT 태그 추가하여 오류 방지
         xml_root = etree.fromstring(wrapped_xml.encode())
         orders = parse_orders(xml_root, session)
 
