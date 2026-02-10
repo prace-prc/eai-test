@@ -1,0 +1,20 @@
+[
+  {
+    "user_id": "USER1",
+    "name": "홍길동",
+    "address": "서울특별시 금천구",
+    "status": "\n        N\n    ",
+    "item_id": "ITEM1",
+    "item_name": "청바지",
+    "price": 21000
+  },
+  {
+    "user_id": "USER2",
+    "name": "유관순",
+    "address": "서울특별시 구로구",
+    "status": "\n        N\n    ",
+    "item_id": "ITEM2",
+    "item_name": "티셔츠",
+    "price": 15800
+  }
+]
