@@ -8,11 +8,17 @@ from app.db.database import engine
 from app.mapper.order_mapper import parse_orders
 from app.utils.file_writer import save_orders_to_file
 from app.utils.decoder import decode_base64_euckr
+from app.utils.sftp_client import upload_file_sftp
 
 load_dotenv()
 
 APPLICANT_NAME=os.getenv("APPLICANT_NAME")
 APPLICANT_KEY=os.getenv("APPLICANT_KEY")
+SFTP_HOST = os.getenv("SFTP_HOST")
+SFTP_PORT = int(os.getenv("SFTP_PORT"))
+SFTP_USER = os.getenv("SFTP_USER")
+SFTP_PASSWORD = os.getenv("SFTP_PASSWORD")
+SFTP_FILE_PATH = os.getenv("SFTP_FILE_PATH")
 
 router = APIRouter()
 SessionLocal = sessionmaker(bind=engine)
@@ -31,6 +37,15 @@ async def create_order(data: str = Body(..., media_type="text/plain")):
             raise ValueError("주문 데이터 없음")
         
         file_path = save_orders_to_file(orders, APPLICANT_NAME, APPLICANT_KEY)
+
+        upload_file_sftp(
+            file_path,
+            SFTP_HOST,
+            SFTP_PORT,
+            SFTP_USER,
+            SFTP_PASSWORD,
+            SFTP_FILE_PATH
+        )
 
         return {
             "status": "SUCCESS",
