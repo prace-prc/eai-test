@@ -1,28 +1,43 @@
+import os
+from dotenv import load_dotenv
 from fastapi import APIRouter, Body, HTTPException
+from sqlalchemy.orm import sessionmaker
 from lxml import etree
+
+from app.db.database import engine
 from app.mapper.order_mapper import parse_orders
 from app.utils.file_writer import save_orders_to_file
 
+load_dotenv()
+
+APPLICANT_NAME=os.getenv("APPLICANT_NAME")
+APPLICANT_KEY=os.getenv("APPLICANT_KEY")
+
 router = APIRouter()
+SessionLocal = sessionmaker(bind=engine)
 
 @router.post("/orders", summary="주문 생성 API (XML 수신)")
 async def create_order(xml_data: str = Body(..., media_type="application/xml")):
+    session = SessionLocal()
+    
     try:
         wrapped_xml = f"<ROOT>{xml_data}</ROOT>" # XML에 ROOT 태그 추가하여 오류 방지
         xml_root = etree.fromstring(wrapped_xml.encode())
-        orders = parse_orders(xml_root)
+        orders = parse_orders(xml_root, session)
 
         if not orders:
             raise ValueError("주문 데이터 없음")
         
-        file_path = save_orders_to_file(orders)
+        file_path = save_orders_to_file(orders, APPLICANT_NAME, APPLICANT_KEY)
 
         return {
             "status": "SUCCESS",
             "saved_file": file_path,
             "order_count": len(orders),
-            #"orders": orders 
         }
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+    finally:
+        session.close()

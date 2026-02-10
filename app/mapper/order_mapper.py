@@ -1,10 +1,12 @@
-def parse_orders(xml_root):
+from app.utils.id_generator import generate_order_id
+
+def parse_orders(xml_root, session):
     orders = []
 
     headers = xml_root.findall(".//HEADER")
     items = xml_root.findall(".//ITEM")
 
-    def clean_text(value): # json 변환 시 필요없는 공백 없애기 위한 함수
+    def clean_text(value): # XML에서 변환 시 필요없는 공백 없애기 위한 함수
         return value.strip() if value else value
 
     for header in headers:
@@ -17,6 +19,7 @@ def parse_orders(xml_root):
 
         for item in user_items:
             orders.append({
+                "order_id": generate_order_id(session),
                 "user_id": user_id,
                 "name": name,
                 "address": address,
