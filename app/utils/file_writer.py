@@ -19,9 +19,9 @@ def save_orders_to_file(orders, applicant_name, applicant_id):
             o["name"],
             o["address"],
             o["item_name"],
-            str(o["price"]),
-            o["status"]
-        ])
+            str(o["price"])
+            ]) + "\\" + o["status"].lower()
+        
         lines.append(line)
 
     with open(filename, "w", encoding="utf-8") as f:
