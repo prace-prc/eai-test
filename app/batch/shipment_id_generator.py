@@ -1,16 +1,27 @@
 from sqlalchemy import text
 
+PREFIX = "A"
+_counter = None
+
+
 def get_next_shipment_id(session):
-    result = session.execute(text("""
-        SELECT MAX(SHIPMENT_ID) FROM SHIPMENT_TB
-    """)).scalar()
+    global _counter
 
-    # 테이블이 비어있는 경우
-    if not result:
-        return "A001"
+    # 최초 1회만 DB에서 마지막 번호 조회
+    if _counter is None:
+        row = session.execute(text(f"""
+            SELECT NVL(MAX(TO_NUMBER(SUBSTR(SHIPMENT_ID, 2, 3))), 0)
+            FROM SHIPMENT_TB
+            WHERE SHIPMENT_ID LIKE '{PREFIX}%'
+        """)).scalar()
 
-    prefix = result[0]          # 알파벳
-    number = int(result[1:])    # 숫자 부분
+        _counter = int(row)
 
-    next_number = number + 1
-    return f"{prefix}{next_number:03d}"
+    # 증가
+    _counter += 1
+
+    # 3자리 포맷
+    if _counter > 999:
+        raise Exception("SHIPMENT_ID 3자리 초과. 규칙 변경 필요")
+
+    return f"{PREFIX}{_counter:03d}"

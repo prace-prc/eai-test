@@ -20,5 +20,6 @@ def run_job():
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
+    run_job()
     scheduler.add_job(run_job, "interval", minutes=5)
     scheduler.start()
