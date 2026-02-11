@@ -5,6 +5,7 @@ class Order(Base):
     __tablename__ = "ORDER_TB"
 
     order_id = Column(String(10), primary_key=True)
+    applicant_key = Column(String(50))
     user_id = Column(String(20))
     name = Column(String(50))
     address = Column(String(200))
