@@ -4,6 +4,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, HTTPException
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 from lxml import etree
 
 from app.db.database import engine
@@ -33,7 +34,7 @@ SessionLocal = sessionmaker(bind=engine)
 def _log(request_id: str, step: str, status: str, message: str = "") -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{now}] [{request_id}] [{step}] [{status}] {message}\n"
-    logfile = os.path.join(LOG_DIR, f"scenario1_{datetime.now().strftime('%Y%m%d')}.log")
+    logfile = os.path.join(LOG_DIR, f"order_{datetime.now().strftime('%Y%m%d')}.log")
     with open(logfile, "a", encoding="utf-8") as f:
         f.write(line)
 

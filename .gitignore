@@ -6,3 +6,4 @@ app/log/
 *.http
 output/
 test_table.py
+logs/
