@@ -1,5 +1,7 @@
 from sqlalchemy import text
+
 from app.core.config import APPLICANT_KEY
+from app.batch.shipment_id_generator import get_next_shipment_id
 
 def process_shipments(session):
     rows = session.execute(text("""
@@ -15,8 +17,7 @@ def process_shipments(session):
     num = 100
 
     for o in rows:
-        num += 1
-        shipment_id = f"{prefix}{num:03d}"
+        shipment_id = get_next_shipment_id(session)
 
         session.execute(text("""
             INSERT INTO SHIPMENT_TB
@@ -32,9 +33,8 @@ def process_shipments(session):
         })
 
         session.execute(text("""
-            UPDATE ORDER_TB
-            SET STATUS = 'Y'
-            WHERE ORDER_ID = :oid
+            UPDATE ORDER_TB SET STATUS='Y'
+            WHERE ORDER_ID=:oid
         """), {"oid": o["ORDER_ID"]})
 
     session.commit()
