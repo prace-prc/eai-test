@@ -29,10 +29,12 @@ def process_shipments(session):
 
     _log(run_id, "SELECT_ORDER_TB", "INFO", f"key={APPLICANT_KEY}")
 
+    # 1) 대상 주문 1회 조회
     rows = session.execute(text("""
-        SELECT * FROM ORDER_TB
+        SELECT ORDER_ID, ITEM_ID, ADDRESS, APPLICANT_KEY
+        FROM ORDER_TB
         WHERE APPLICANT_KEY = :key
-        AND STATUS = 'N'
+          AND STATUS = 'N'
     """), {"key": APPLICANT_KEY}).mappings().all()
 
     _log(run_id, "SELECT_ORDER_TB", "SUCCESS", f"count={len(rows)}")
@@ -41,62 +43,48 @@ def process_shipments(session):
         _log(run_id, "END", "SUCCESS", "대상 없음")
         return
 
-    prefix = "A"
-    num = 100
+    try:
+        for o in rows:
+            # 2) shipment_id 생성
+            shipment_id = get_next_shipment_id(session)
 
-    for o in rows:
-        shipment_id = get_next_shipment_id(session)
+            _log(run_id, "ROW_START", "INFO",
+                 f"order_id={o['order_id']}, shipment_id={shipment_id}")
 
-        _log(
-            run_id,
-            "ROW_START",
-            "INFO",
-            f"order_id={o.get('order_id')}, shipment_id={shipment_id}"
-        )
+            # 3) SHIPMENT_TB insert
+            insert_sql = """
+                INSERT INTO SHIPMENT_TB
+                (SHIPMENT_ID, APPLICANT_KEY, ORDER_ID, ITEM_ID, ADDRESS)
+                VALUES (:sid, :aid, :oid, :iid, :addr)
+            """
+            insert_params = {
+                "sid": shipment_id,
+                "aid": o["applicant_key"],
+                "oid": o["order_id"],
+                "iid": o["item_id"],
+                "addr": o["address"],
+            }
 
-        orders = session.execute(text("""
-        SELECT ORDER_ID,
-               USER_ID,
-               ITEM_ID,
-               ADDRESS,
-               APPLICANT_KEY
-                FROM ORDER_TB
-                WHERE STATUS = 'N'
-            """)).fetchall()
+            session.execute(text(insert_sql), insert_params)
+            _log(run_id, "INSERT_SHIPMENT_TB", "SUCCESS",
+                 f"order_id={o['order_id']}")
 
-        if not orders:
-            print("운송할 주문 없음")
-            _log(run_id, "END", "SUCCESS", "운송할 주문 없음")
-            return
+            # 4) ORDER_TB 상태 업데이트
+            session.execute(text("""
+                UPDATE ORDER_TB
+                SET STATUS='Y'
+                WHERE APPLICANT_KEY=:key
+                  AND ORDER_ID=:oid
+            """), {"key": APPLICANT_KEY, "oid": o["order_id"]})
 
-        print(f"{len(orders)}건 처리 시작")
-        _log(run_id, "PROCESS_COUNT", "INFO", f"count={len(orders)}")
+            _log(run_id, "UPDATE_ORDER_TB", "SUCCESS",
+                 f"order_id={o['order_id']}")
 
-        insert_sql = """
-            INSERT INTO SHIPMENT_TB
-            (SHIPMENT_ID, APPLICANT_KEY, ORDER_ID, ITEM_ID, ADDRESS)
-            VALUES (:sid, :aid, :oid, :iid, :addr)
-        """
-        insert_params = {
-            "sid": shipment_id,
-            "aid": o["applicant_key"],
-            "oid": o["order_id"],
-            "iid": o["item_id"],
-            "addr": o["address"]
-        }
-        _log(run_id, "INSERT_SHIPMENT_TB", "INFO", f"params={insert_params}")
-        log_sql(insert_sql, insert_params)
+        session.commit()
+        _log(run_id, "COMMIT", "SUCCESS", "커밋 완료")
+        _log(run_id, "END", "SUCCESS", "운송 배치 종료")
 
-        session.execute(text(insert_sql), insert_params)
-        _log(run_id, "INSERT_SHIPMENT_TB", "SUCCESS", f"order_id={o.get('order_id')}")
-
-        session.execute(text("""
-            UPDATE ORDER_TB SET STATUS='Y'
-            WHERE ORDER_ID=:oid
-        """), {"oid": o["order_id"]})
-
-        _log(run_id, "UPDATE_ORDER_TB", "SUCCESS", f"order_id={o.get('order_id')}")
-
-    session.commit()
-    _log(run_id, "COMMIT", "SUCCESS", "커밋 완료")
-    _log(run_id, "END", "SUCCESS", "운송 배치 종료")
+    except SQLAlchemyError as e:
+        session.rollback()
+        _log(run_id, "BATCH", "FAIL", str(e))
+        raise

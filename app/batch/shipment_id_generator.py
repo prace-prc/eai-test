@@ -1,6 +1,8 @@
 from sqlalchemy import text
-
-PREFIX = "A"
+#실제로는 배송 ID의 최대 값을 불러와서 자동으로 부여해야 하지만 
+#든 지원자들이 같이 DB를 사용하는 과제 환경 특성상 값이 복잡하게 섞여있어 
+#운송 id 맨 앞 알파벳을 지정해서 진행
+PREFIX = "I" 
 _counter = None
 
 

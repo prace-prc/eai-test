@@ -21,4 +21,3 @@ def insert_orders(session: Session, orders: list):
         )
 
     session.add_all(db_objects)
-    session.commit()
