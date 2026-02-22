@@ -3,11 +3,10 @@ import uuid
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, HTTPException
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from lxml import etree
 
-from app.db.database import engine
+from app.db.database import engine, SessionLocal
 from app.db.order_repository import insert_orders
 from app.mapper.order_mapper import parse_orders
 from app.utils.file_writer import save_orders_to_file
@@ -29,7 +28,6 @@ LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 router = APIRouter()
-SessionLocal = sessionmaker(bind=engine)
 
 def _log(request_id: str, step: str, status: str, message: str = "") -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

@@ -7,3 +7,4 @@ app/log/
 output/
 test_table.py
 logs/
+sqltemp.py

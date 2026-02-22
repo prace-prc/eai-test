@@ -1,10 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from sqlalchemy.orm import sessionmaker
-from app.db.database import engine
+from app.db.database import engine, SessionLocal
 from app.batch.shipment_service import process_shipments
-
-SessionLocal = sessionmaker(bind=engine)
-
 
 def run_job():
     session = SessionLocal()
